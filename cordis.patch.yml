@@ -1,0 +1,7 @@
+- insert:
+    - id: uking-workspace-terminal
+      name: dsh-workspace-terminal
+      config:
+        maxTerminals: 8
+        maxBufferChars: 262144
+        brandUrl: https://www.u-king.org/?from=dsh-workspace-terminal
