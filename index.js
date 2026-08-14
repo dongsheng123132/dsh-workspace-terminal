@@ -1,7 +1,9 @@
+import { execFile } from 'node:child_process'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { WebSocketServer } from 'ws'
-import { normalizeConfig, parseClientMessage, publicError, validWebSocketOrigin } from './lib/core.mjs'
+import { externalOpenCommand, normalizeConfig, parseClientMessage, publicError, validWebSocketOrigin } from './lib/core.mjs'
 import { TerminalManager, managerFailure } from './lib/terminal-manager.mjs'
 
 export const name = 'dsh-workspace-terminal'
@@ -9,7 +11,10 @@ export const inject = ['webServer', 'tools']
 
 const MANIFEST_PATH = '/plugins/dsh-workspace-terminal/manifest'
 const SOCKET_PATH = '/plugins/dsh-workspace-terminal/ws'
+const BRAND_PATH = '/plugins/dsh-workspace-terminal/uking'
+const BRAND_OPEN_PATH = '/plugins/dsh-workspace-terminal/open-uking'
 const META_NAME = 'dsh-workspace-terminal-token'
+const execFileAsync = promisify(execFile)
 
 function send(socket, value) {
   if (socket.readyState === 1) socket.send(JSON.stringify(value))
@@ -95,9 +100,40 @@ export function apply(ctx, rawConfig = {}) {
         launchers: config.launchers.map(({ id, label }) => ({ id, label })),
         cwd: config.allowedRoots[0],
         maxTerminals: config.maxTerminals,
-        brand: { name: 'U-King', url: config.brandUrl },
+        brand: { name: 'U-King', url: config.brandUrl, href: BRAND_PATH, openPath: BRAND_OPEN_PATH },
         collaborationTools: ['uking_terminal_list', 'uking_terminal_read', 'uking_terminal_send'],
       })
+    },
+  })
+  const disposeBrand = ctx.webServer.register({
+    kind: 'exact',
+    path: BRAND_PATH,
+    handler(req, res) {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED' } })
+      res.writeHead(302, {
+        location: config.brandUrl,
+        'cache-control': 'no-store',
+        'referrer-policy': 'no-referrer',
+      })
+      res.end()
+    },
+  })
+  const disposeBrandOpen = ctx.webServer.register({
+    kind: 'exact',
+    path: BRAND_OPEN_PATH,
+    async handler(req, res) {
+      if (req.method !== 'POST') return json(res, 405, { error: { code: 'METHOD_NOT_ALLOWED' } })
+      if (!validWebSocketOrigin(req) || !equalToken(req.headers['x-uking-terminal-token'], token)) {
+        return json(res, 403, { error: { code: 'FORBIDDEN' } })
+      }
+      try {
+        const command = externalOpenCommand(config.brandUrl)
+        await execFileAsync(command.file, command.args, { windowsHide: true, timeout: 10000 })
+        return json(res, 200, { opened: true, url: config.brandUrl })
+      } catch (error) {
+        ctx.logger.warn('failed to open U-King URL', error)
+        return json(res, 500, { error: { code: 'OPEN_FAILED', message: 'Could not open the system browser.' } })
+      }
     },
   })
   const disposeUpgrade = ctx.webServer.registerUpgrade({
@@ -147,6 +183,8 @@ export function apply(ctx, rawConfig = {}) {
 
   ctx.effect(() => async () => {
     disposeUpgrade()
+    disposeBrandOpen()
+    disposeBrand()
     disposeManifest()
     disposeIndex()
     for (const socket of wss.clients) socket.close(1001, 'plugin disposed')

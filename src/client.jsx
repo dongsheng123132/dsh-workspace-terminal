@@ -24,7 +24,7 @@ const styles = `${xtermCss}
 .uking-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.uking-tab button,.uking-close{border:0;background:transparent;color:inherit;cursor:pointer;border-radius:4px}.uking-tab button:hover,.uking-close:hover{background:var(--dsw-alias-bg-layer-3)}
 .uking-body{position:relative;flex:1;min-height:0;background:#111315}.uking-terminal{position:absolute;inset:0;padding:6px}.uking-terminal[hidden]{display:none}.uking-terminal-host{width:100%;height:100%}
 .uking-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;padding:30px;color:var(--dsw-alias-label-secondary)}.uking-empty strong{color:var(--dsw-alias-label-primary);font-size:15px}.uking-empty p{max-width:390px;margin:0;font-size:12px;line-height:1.65}
-.uking-foot{min-height:34px;display:flex;align-items:center;gap:8px;padding:5px 10px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-tertiary)}.uking-foot a{color:var(--dsw-alias-brand-primary);text-decoration:none}.uking-foot a:hover{text-decoration:underline}.uking-spacer{flex:1}.uking-cwd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48%}
+.uking-foot{min-height:34px;display:flex;align-items:center;gap:8px;padding:5px 10px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-tertiary)}.uking-brand-link{border:0;padding:0;background:transparent;color:var(--dsw-alias-brand-primary);font:inherit;cursor:pointer}.uking-brand-link:hover{text-decoration:underline}.uking-brand-status{color:var(--dsw-alias-label-secondary)}.uking-spacer{flex:1}.uking-cwd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48%}
 .uking-error{position:absolute;left:10px;right:10px;bottom:10px;padding:8px 10px;border-radius:8px;background:#4b1f24;color:#ffd9de;font-size:11px;z-index:4}
 `
 
@@ -123,10 +123,23 @@ function AgentDock({ store, useSessions }) {
   const [tabs, setTabs] = useState([])
   const [activeId, setActiveId] = useState(null)
   const [width, setWidth] = useState(560)
+  const [brandStatus, setBrandStatus] = useState('')
   const sequence = useRef(0)
 
   useEffect(() => { fetch(MANIFEST_PATH, { cache: 'no-store' }).then(r => r.json()).then(setManifest).catch(() => {}) }, [])
   const cwd = current?.cwd || manifest?.cwd || ''
+  const brandOpenPath = manifest?.brand?.openPath || '/plugins/dsh-workspace-terminal/open-uking'
+  const openBrand = async () => {
+    setBrandStatus('正在打开…')
+    const token = document.querySelector(`meta[name="${META_NAME}"]`)?.getAttribute('content')
+    try {
+      const response = await fetch(brandOpenPath, { method: 'POST', headers: { 'x-uking-terminal-token': token || '' } })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      setBrandStatus('已在浏览器打开')
+    } catch {
+      setBrandStatus('打开失败，请访问 u-king.org')
+    }
+  }
   const openTab = (launcher) => {
     const id = `tab-${++sequence.current}`
     setTabs(items => [...items, { id, launcher, session: null }])
@@ -155,7 +168,7 @@ function AgentDock({ store, useSessions }) {
     <div className="uking-launchers">{manifest?.launchers?.map(launcher => <button key={launcher.id} className="uking-launch" onClick={() => openTab(launcher)}>＋ {launcher.label}</button>) ?? <span>正在加载终端…</span>}</div>
     {tabs.length > 0 && <div className="uking-tabs">{tabs.map(tab => <div key={tab.id} className="uking-tab" data-active={tab.id === activeId} onClick={() => setActiveId(tab.id)}><span>● {tab.launcher.label}</span><button onClick={e => { e.stopPropagation(); closeTab(tab.id) }}>×</button></div>)}</div>}
     <div className="uking-body">{tabs.length === 0 ? <div className="uking-empty"><strong>右侧多 Agent 工作台</strong><p>打开 Claude Code、Hermes、Codex 或普通 Shell。每个标签都是独立真实 PTY；收起继续运行，关闭标签才停止。</p><p>DSH 可通过 <code>uking_terminal_*</code> 工具读取和发送，实现同一工作目录里的接力协作。</p></div> : tabs.map(tab => <TerminalPane key={tab.id} tab={tab} active={tab.id === activeId} cwd={cwd} onReady={onReady} />)}</div>
-    <div className="uking-foot"><span className="uking-cwd" title={cwd}>目录：{cwd || '等待工作区'}</span><span className="uking-spacer" /><span>换模型后请新开终端</span><a href={manifest?.brand?.url || 'https://www.u-king.org/?from=dsh-workspace-terminal'} target="_blank" rel="noreferrer">用 U-King 管理模型与更多 AI →</a></div>
+    <div className="uking-foot"><span className="uking-cwd" title={cwd}>目录：{cwd || '等待工作区'}</span><span className="uking-spacer" /><span>换模型后请新开终端</span>{brandStatus && <span className="uking-brand-status">{brandStatus}</span>}<button className="uking-brand-link" type="button" onClick={() => { void openBrand() }} title="用系统默认浏览器打开 U-King">用 U-King 管理模型与更多 AI →</button></div>
   </aside>
 }
 

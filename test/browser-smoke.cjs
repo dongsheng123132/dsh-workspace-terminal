@@ -32,7 +32,9 @@ const marker = `DSH_BROWSER_TERMINAL_OK_${process.pid}`
 
     await page.getByRole('button', { name: /PowerShell|Shell/ }).click()
     assert.equal(await page.locator('.uking-tab').count(), 2, 'second terminal tab did not open')
-    assert.match(await page.locator('.uking-foot a').getAttribute('href'), /^https:\/\/www\.u-king\.org\//)
+    const brandButton = page.locator('.uking-brand-link')
+    assert.equal(await brandButton.getAttribute('type'), 'button')
+    assert.match(await brandButton.getAttribute('title'), /系统默认浏览器/)
     assert.deepEqual(faults, [], `browser errors: ${faults.join(' | ')}`)
     if (process.env.DSH_TERMINAL_SCREENSHOT) {
       await page.screenshot({ path: process.env.DSH_TERMINAL_SCREENSHOT, fullPage: true })
