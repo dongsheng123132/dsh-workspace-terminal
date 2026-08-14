@@ -6379,7 +6379,7 @@ var styles = `${xterm_default}
 .uking-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.uking-tab button,.uking-close{border:0;background:transparent;color:inherit;cursor:pointer;border-radius:4px}.uking-tab button:hover,.uking-close:hover{background:var(--dsw-alias-bg-layer-3)}
 .uking-body{position:relative;flex:1;min-height:0;background:#111315}.uking-terminal{position:absolute;inset:0;padding:6px}.uking-terminal[hidden]{display:none}.uking-terminal-host{width:100%;height:100%}
 .uking-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;padding:30px;color:var(--dsw-alias-label-secondary)}.uking-empty strong{color:var(--dsw-alias-label-primary);font-size:15px}.uking-empty p{max-width:390px;margin:0;font-size:12px;line-height:1.65}
-.uking-foot{min-height:34px;display:flex;align-items:center;gap:8px;padding:5px 10px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-tertiary)}.uking-foot a{color:var(--dsw-alias-brand-primary);text-decoration:none}.uking-foot a:hover{text-decoration:underline}.uking-spacer{flex:1}.uking-cwd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48%}
+.uking-foot{min-height:34px;display:flex;align-items:center;gap:8px;padding:5px 10px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-tertiary)}.uking-brand-link{border:0;padding:0;background:transparent;color:var(--dsw-alias-brand-primary);font:inherit;cursor:pointer}.uking-brand-link:hover{text-decoration:underline}.uking-brand-status{color:var(--dsw-alias-label-secondary)}.uking-spacer{flex:1}.uking-cwd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48%}
 .uking-error{position:absolute;left:10px;right:10px;bottom:10px;padding:8px 10px;border-radius:8px;background:#4b1f24;color:#ffd9de;font-size:11px;z-index:4}
 `;
 function ensureStyles() {
@@ -6504,12 +6504,25 @@ function AgentDock({ store, useSessions }) {
   const [tabs, setTabs] = (0, import_react.useState)([]);
   const [activeId, setActiveId] = (0, import_react.useState)(null);
   const [width, setWidth] = (0, import_react.useState)(560);
+  const [brandStatus, setBrandStatus] = (0, import_react.useState)("");
   const sequence = (0, import_react.useRef)(0);
   (0, import_react.useEffect)(() => {
     fetch(MANIFEST_PATH, { cache: "no-store" }).then((r) => r.json()).then(setManifest).catch(() => {
     });
   }, []);
   const cwd = current?.cwd || manifest?.cwd || "";
+  const brandOpenPath = manifest?.brand?.openPath || "/plugins/dsh-workspace-terminal/open-uking";
+  const openBrand = async () => {
+    setBrandStatus("\u6B63\u5728\u6253\u5F00\u2026");
+    const token = document.querySelector(`meta[name="${META_NAME}"]`)?.getAttribute("content");
+    try {
+      const response = await fetch(brandOpenPath, { method: "POST", headers: { "x-uking-terminal-token": token || "" } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setBrandStatus("\u5DF2\u5728\u6D4F\u89C8\u5668\u6253\u5F00");
+    } catch {
+      setBrandStatus("\u6253\u5F00\u5931\u8D25\uFF0C\u8BF7\u8BBF\u95EE u-king.org");
+    }
+  };
   const openTab = (launcher) => {
     const id = `tab-${++sequence.current}`;
     setTabs((items) => [...items, { id, launcher, session: null }]);
@@ -6573,7 +6586,10 @@ function AgentDock({ store, useSessions }) {
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "uking-spacer" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "\u6362\u6A21\u578B\u540E\u8BF7\u65B0\u5F00\u7EC8\u7AEF" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", { href: manifest?.brand?.url || "https://www.u-king.org/?from=dsh-workspace-terminal", target: "_blank", rel: "noreferrer", children: "\u7528 U-King \u7BA1\u7406\u6A21\u578B\u4E0E\u66F4\u591A AI \u2192" })
+      brandStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "uking-brand-status", children: brandStatus }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: "uking-brand-link", type: "button", onClick: () => {
+        void openBrand();
+      }, title: "\u7528\u7CFB\u7EDF\u9ED8\u8BA4\u6D4F\u89C8\u5668\u6253\u5F00 U-King", children: "\u7528 U-King \u7BA1\u7406\u6A21\u578B\u4E0E\u66F4\u591A AI \u2192" })
     ] })
   ] });
 }

@@ -8,6 +8,7 @@ DeepSeek Harness 的 U-King 风格右侧多 Agent 终端插件。
 - 当前 DSH 工作目录传给终端；
 - DSH 可通过 `uking_terminal_list`、`uking_terminal_read`、`uking_terminal_send` 与右侧终端接力；
 - 模型配置不在插件中重复实现：DSH 会话由自带模型选择或 `dsh-switch` 管理；Claude Code、Hermes、Codex 的跨 CLI 配置交给 U-King 管理。切换后新开终端生效。
+- U-King 导流按钮只在用户点击时向本机 DSH 发送带随机令牌的同源 POST，再由宿主用无 shell 的系统命令打开默认浏览器；兼容会阻止外站导航的 DSH 应用内浏览器。
 
 ## 安装
 

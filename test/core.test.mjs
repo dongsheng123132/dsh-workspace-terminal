@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import {
   appendBounded, normalizeConfig, normalizeLaunchers, parseClientMessage,
-  resolveAllowedCwd, scrubbedEnvironment, validWebSocketOrigin,
+  externalOpenCommand, resolveAllowedCwd, scrubbedEnvironment, validWebSocketOrigin,
 } from '../lib/core.mjs'
 
 test('normalizes the built-in launcher roster', () => {
@@ -58,6 +58,15 @@ test('scrubs credential-shaped and DSH ambient names', () => {
 test('origin must match the actual Host header', () => {
   assert.equal(validWebSocketOrigin({ headers: { host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080' } }), true)
   assert.equal(validWebSocketOrigin({ headers: { host: '127.0.0.1:3080', origin: 'https://evil.example' } }), false)
+})
+
+test('external browser commands never invoke a shell', () => {
+  assert.deepEqual(externalOpenCommand('https://www.u-king.org/', 'win32', 'C:\\Windows'), {
+    file: 'C:\\Windows\\System32\\rundll32.exe', args: ['url.dll,FileProtocolHandler', 'https://www.u-king.org/'],
+  })
+  assert.deepEqual(externalOpenCommand('https://www.u-king.org/', 'darwin'), { file: 'open', args: ['https://www.u-king.org/'] })
+  assert.deepEqual(externalOpenCommand('https://www.u-king.org/', 'linux'), { file: 'xdg-open', args: ['https://www.u-king.org/'] })
+  assert.throws(() => externalOpenCommand('http://example.com', 'linux'), /https/)
 })
 
 test('bounded append retains the newest tail', () => {
