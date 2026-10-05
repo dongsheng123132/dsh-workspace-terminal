@@ -12,7 +12,7 @@ await build({
   external: [
     'react',
     'react/jsx-runtime',
-    '@deepseek-ai/dsh-client-runtime/client',
+    '@deepseek-ai/dsh-client-ui-renderer/client',
     '@deepseek-ai/dsh-client-ui-layout/client',
     '@deepseek-ai/dsh-client-ui-sidebar/client',
     '@deepseek-ai/dsh-client-ui-conversation/client',

@@ -1,6 +1,6 @@
 {
   "name": "dsh-workspace-terminal",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "U-King style multi-agent terminal dock for DeepSeek Harness",
   "license": "MIT",
   "type": "module",
@@ -26,26 +26,23 @@
     },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-renderer",
         "@deepseek-ai/dsh-client-ui-layout",
-        "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-ui-conversation"
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar"
       ],
       "platform": "web",
       "immediately": true
     },
     "compatibility": {
-      "dsh": ">=0.1.2-alpha.4",
-      "node": ">=22",
-      "dshReleases": {
-        "0.1.2-alpha.4": "compatible",
-        "0.1.2-alpha.5": "compatible",
-        "0.1.2-rc.1": "compatible"
-      }
+      "dsh": ">=0.1.6-alpha.1",
+      "node": ">=22"
     }
   },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6"
+  },
   "dependencies": {
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "node-pty": "1.1.0",
     "ws": "^8.18.3"
   },
